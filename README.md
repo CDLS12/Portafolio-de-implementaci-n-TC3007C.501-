@@ -8,12 +8,12 @@ Modulo 1
 Modulo 2
 - Implementación de un modelo de Deep Learning.pdf (Documento de la implementacion del modelo deep learning de manera individual)
 - DL.ipynb (Modelo que se implemento para el entregable anterior)
-
+- 
 Modulo 3
 - NLP_A01275316_Carlos David.pdf (Documentacion del entregable final NLP chatGPT Reconocedor de voz con
 ChatGPT: Whisper)
 - whisper_summarize.py (Codigo elaborado para la creacion del reporte final NLP chatGPT)
-
+- MA1.m4a (Audio a transcribir en el modelo)
 Modulo 4
 - Examen.PNG (Captura del Examen y Calificacion)
 - CloudMigration_Equipo6.pdf
