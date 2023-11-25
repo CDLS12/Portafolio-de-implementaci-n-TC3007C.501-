@@ -14,6 +14,7 @@ Modulo 3
 ChatGPT: Whisper)
 - whisper_summarize.py (Codigo elaborado para la creacion del reporte final NLP chatGPT)
 - MA1.m4a (Audio a transcribir en el modelo)
+
 Modulo 4
 - Examen.PNG (Captura del Examen y Calificacion)
 - CloudMigration_Equipo6.pdf
