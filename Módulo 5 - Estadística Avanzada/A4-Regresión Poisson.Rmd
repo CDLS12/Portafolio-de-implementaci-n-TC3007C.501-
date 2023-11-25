@@ -1,0 +1,66 @@
+---
+title: "A4-Regresión Poisson"
+author: "Carlos David Lozano Sanguino - A01275316"
+date: "2023-10-13"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Trabajaremos con el paquete dataset, que incluye la base de datos warpbreaks, que contiene datos del hilo (yarn) para identificar cuáles variables predictoras afectan la ruptura de urdimbre.
+
+```{r}
+data<-warpbreaks
+head(data,10)
+```
+
+Este conjunto de datos indica cuántas roturas de urdimbre ocurrieron para diferentes tipos de telares por telar, por longitud fija de hilo:
+
+breaks: número de rupturas
+wool: tipo de lana (A o B)
+tensión: el nivel de tensión (L, M, H)
+Obtén:
+
+Histograma del número de rupturas
+
+```{r}
+hist(data$breaks, main = "Histograma del número de rupturas", xlab = "Número de rupturas")
+```
+
+Obtén la media y la varianza
+```{r}
+media <- mean(data$breaks)
+varianza <- var(data$breaks)
+
+cat("Media:", media, "\n")
+cat("Varianza:", varianza, "\n")
+```
+
+Ajusta el modelo de regresión Poisson.
+
+```{r}
+poisson.model <- glm(breaks ~ wool + tension, data = data, family = poisson(link = "log"))
+summary(poisson.model)
+```
+Analisis de Resultados:
+Tras el analisis anterior se obtuvieron los resultados siguientes, para empezar una interpretacion de todos los coeficientes:
+-Intercept (Intercepto): El coeficiente del intercepto es 3.69196 que es la estimación del logaritmo natural del número esperado de rupturas cuando todas las demás variables predictoras son iguales a cero.
+-woolB: El coeficiente para la variable categórica "woolB" es -0.20599, este coeficiente tambien está asociado con una disminución en el logaritmo natural del número esperado de rupturas que tiene menos rupturas en comparación con "woolA."
+-tensionM: El coeficiente para la variable categórica "tensionM" es -0.32132. Esto indica que, en comparación con la categoría de referencia "tensionL," un nivel de tensión "tensionM" está asociado con una disminución en el número esperado de rupturas.
+-tensionH: El coeficiente para la variable categórica "tensionH" es -0.51849 que en comparacion "tensionL," un nivel de tensión "tensionH" está asociado con una disminución aún mayor en el número esperado de rupturas.
+Teniendo en cuenta los coeficiente y su relacion con la cantidad de rupturas, podemos comparar y analizar la significancia estadistica de cada coeficiente, en el modelo se aprecia que "woolB," "tensionM," y "tensionH" tienen un impacto significativo en el número de rupturas por la cantidad de asteriscos dado el modelo y el valor de cada coeficiente.
+
+Tambien en este modelo se tiene la Null deviance que indica la desviación del modelo cuando solo se incluye el intercepto (gran media) y no se consideran las variables predictoras y Residual deviance que epresenta la desviación del modelo con la inclusión de las variables predictoras,Una desviación menor con la inclusión de variables sugiere un mejor ajuste del modelo. En este caso, la desviación residual es menor que la desviación nula, lo que indica un ajuste significativamente mejor que un modelo nulo(Residual deviance: 210.39 < Null deviance: 297.37) y como el valor de las desviaciones son mayores que los grados de libertad entonces el modelo toma los errores estandar.
+
+Por ultimo se tiene el AIC que es es una medida de la calidad del modelo que tiene en cuenta tanto el ajuste del modelo como su complejidad. En este caso, el AIC es 493.06, y se utiliza para comparar modelos alternativos. 
+
+```{r}
+poisson.model2<-glm(breaks ~ wool + tension, data = data, family = quasipoisson(link = "log"))
+summary(poisson.model2)
+```
+
+Analisis con ambos modelos:
+Al compararlo con el modelo quasipoisson este no tiene AIC por lo que no se puude comparar en ese punto pero si se puede observar que las variables tensionH tiene mas significancia mientras que tensionM tiene una menor y woolB no tiene ninguna, la deviance es la misma que el modelo poisson anterior por lo que se puede concluir que el primer modelo esta mejor ajustado y  sugiere que el tipo de lana ("wool") y el nivel de tensión ("tension") tienen un impacto significativo en el número de rupturas. El modelo se ajusta bien a los datos, ya que la desviación residual es menor que la desviación nula, y el AIC es relativamente bajo.
+

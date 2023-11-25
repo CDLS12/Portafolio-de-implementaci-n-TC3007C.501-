@@ -1,0 +1,236 @@
+---
+title: "A7-Introducción a series de tiempo. Series estacionarias"
+author: "Carlos David Lozano Sanguino - A01275316"
+date: "2023-11-02"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problema 1
+
+Usa los datos de las ventas de gasolina en una estación de servicio para analizar modelos de pronósticos de la serie de tiempo:
+
+```{r}
+#vector de tiempo
+t = 1:12
+#valores observados
+y = c(17, 21, 19, 23, 18, 16, 20, 18, 22, 20, 15, 22)
+```
+## Utiliza los métodos de suavizamiento:
+
+- Suavizamiento por promedios móviles
+```{r}
+# Utiliza el comando for para el cálculo de los pronósticos y los errores:
+# Crear vectores para pronósticos (p) y errores (e)
+p <- rep(NA, length(y))
+e <- rep(NA, length(y))
+
+# Calcular pronósticos y errores utilizando Promedios Móviles
+n <- length(y)
+for (i in 1:(n - 3)) {
+  p[i + 3] <- (y[i] + y[i + 1] + y[i + 2]) / 3
+  e[i + 3] <- p[i + 3] - y[i + 3]}
+```
+
+```{r}
+# Crear un data frame con t, y, p y e^2
+T <- data.frame(t = t, y = y, p = p, e2 = e^2)
+
+# Calcular el CME sin NA
+CME <- mean(T$e2, na.rm = TRUE)
+
+# Imprimir la tabla T y el CME
+print(T)
+cat("CME:", CME, "\n")
+
+```
+
+```{r}
+# Graficar los datos de ventas de gasolina y los pronósticos
+plot(t, y, type = "o", col = "red", xlab = "Semana", ylab = "Galones de Gasolina")
+x <- (3 + 1):n
+lines(x, p[x], type = "o", col = "blue")
+legend("topright", legend = c("Datos", "Pronósticos"), col = c("red", "blue"), lty = 1, cex = 0.8)
+
+```
+
+- Suavizamiento por promedios móviles ponderados
+
+```{r}
+# Crear vectores para pronósticos (p2) y errores (e2)
+p2 <- rep(NA, length(y))
+e2 <- rep(NA, length(y))
+
+# Calcular pronósticos y errores utilizando Promedios Móviles Ponderados
+n <- length(y)
+for (i in 1:(n - 3)) {
+  p2[i + 3] <- (1/6) * y[i] + (2/6) * y[i + 1] + (3/6) * y[i + 2]
+  e2[i + 3] <- p2[i + 3] - y[i + 3]
+}
+```
+
+```{r}
+# Crear un data frame con t, y, p2 y e2^2
+T2 <- data.frame(t , y , p2 = p2, e2 = e2^2)
+
+# Calcular el CME2 sin NA
+CME2 <- mean(T2$e2, na.rm = TRUE)
+```
+
+```{r}
+# Graficar los datos de ventas de gasolina y los pronósticos
+plot(t, y, type = "o", col = "red", xlab = "Semana", ylab = "Galones de Gasolina")
+x <- (3 + 1):n
+lines(x, p2[x], type = "o", col = "blue")
+legend("topright", legend = c("Datos", "Pronósticos"), col = c("red", "blue"), lty = 1, cex = 0.8)
+
+# Imprimir la tabla T2 y el CME2
+print(T2)
+cat("CME2:", CME2, "\n")
+```
+
+- Método de suavizamiento exponencial
+
+```{r}
+# Crear vectores para pronósticos (p3) y errores (e3)
+p3 <- rep(NA, length(y))
+e3 <- rep(NA, length(y))
+
+# Inicializar los primeros dos valores de p3
+p3[1] <- y[1]
+p3[2] <- y[1]
+
+# Parámetro de suavizamiento
+a <- 0.20
+
+# Calcular pronósticos y errores utilizando Suavizamiento Exponencial
+n <- length(y)
+for (i in 3:n) {
+  p3[i] <- a * y[i - 1] + (1 - a) * p3[i - 1]
+  e3[i] <- y[i] - p3[i]
+}
+```
+
+```{r}
+# Crear un data frame con t, y, p3 y e3^2
+T3 <- data.frame(t, y, p3, e3 = e3^2)
+# Calcular el CME3 sin NA
+CME3 <- mean(T3$e3, na.rm = TRUE)
+# Graficar los datos de ventas de gasolina y los pronósticos
+plot(t[2:n], y[2:n], type = "o", col = "red", xlab = "Semana", ylab = "Galones de Gasolina")
+lines(t[2:n], p3[2:n], type = "o", col = "blue")
+legend("topright", legend = c("Datos", "Pronósticos"), col = c("red", "blue"), lty = 1, cex = 0.8)
+
+# Imprimir la tabla T3 y el CME3
+print(T3)
+cat("CME3:", CME3, "\n")
+```
+
+- Crea un programa que te permita evaluar varios valores de en el método de suavizamiento exponencial hasta encontrar el valor de que minimice el CME.
+```{r}
+# Vector de valores de α a evaluar
+alphas <- seq(0.01, 1, by = 0.01)
+
+# Vectores para almacenar los resultados
+cme_values <- numeric(length(alphas))
+predictions <- list()
+
+# Ciclo para evaluar diferentes valores de α
+for (i in 1:length(alphas)) {
+  p <- rep(NA, length(y))
+  e <- rep(NA, length(y))
+  
+  p[1] <- y[1]
+  p[2] <- y[1]
+  
+  for (j in 3:n) {
+    p[j] <- alphas[i] * y[j - 1] + (1 - alphas[i]) * p[j - 1]
+    e[j] <- y[j] - p[j]
+  }
+  
+  cme_values[i] <- mean(e^2, na.rm = TRUE)
+  predictions[[i]] <- p
+}
+
+# Encuentra el valor de α que minimiza el CME
+best_alpha <- alphas[which.min(cme_values)]
+best_prediction <- predictions[[which.min(cme_values)]]
+
+# Imprime el valor de α que minimiza el CME
+cat("Mejor valor de α:", best_alpha, "\n")
+
+# Imprime el CME mínimo
+min_cme <- min(cme_values)
+cat("CME mínimo:", min_cme, "\n")
+
+# Predicción para la semana 13 con el mejor valor de α
+next_week_prediction <- best_alpha * y[n] + (1 - best_alpha) * best_prediction[n]
+cat("Predicción para la semana 13:", next_week_prediction, "\n")
+
+```
+
+## Concluye sobre cuál de los modelos usados es el mejor
+
+Podemos concluir que el mejor modelo es el Modelo 3, que corresponde al Suavizamiento Exponencial (CME3 = 8.280454). Esto se debe a que tiene el valor más bajo de CME entre los tres modelos que evaluaste. En el análisis de series de tiempo, un valor de CME más bajo indica que el modelo se ajusta mejor a los datos observados, lo que sugiere que es el modelo más preciso para predecir las ventas de gasolina en función de los datos históricos.
+
+Por lo tanto, el Modelo 3 (Suavizamiento Exponencial) es preferible en este caso debido a su CME más bajo en comparación con los otros modelos.
+
+# Problema 2
+
+Realiza el problema sobre el registro del precio de las acciones (Otros ejemplos de la diapositiva "Series de tiempo estacionarias").
+
+```{r}
+#Dia
+t = c(24,25,26,29,30,1,2,6,7,8,9,12,13,14,15,16)
+#Precio
+y = c(81.32,81.10,80.38,81.34,80.54,80.62,79.54,79.46,81.02,80.98,80.80,81.44,81.48,80.75,80.48,80.01,80.33)
+
+# Promedio móvil de tres días
+n <- length(y)
+ma3 <- numeric(n)
+
+for (i in 1:(n-2)) {
+  ma3[i+2] <- (y[i] + y[i+1] + y[i+2]) / 3
+}
+
+# Pronóstico para el 19 de septiembre
+pronostico_ma3 <- ma3[n] # El pronóstico es el valor más reciente del promedio móvil
+
+# Resultados
+cat("Pronóstico con Promedio Móvil de Tres Días para el 19 de septiembre:", pronostico_ma3, "\n")
+
+```
+
+```{r}
+# Parámetro de suavizamiento
+alpha <- 0.6
+
+# Suavizamiento exponencial
+n <- length(y)
+suavizado_exp <- numeric(n)
+
+suavizado_exp[1] <- y[1]
+suavizado_exp[2] <- y[1]
+
+for (i in 3:n) {
+  suavizado_exp[i] <- alpha * y[i-1] + (1 - alpha) * suavizado_exp[i-1]
+}
+
+# Pronóstico para el 19 de septiembre
+pronostico_exp <- alpha * y[n] + (1 - alpha) * suavizado_exp[n]
+
+# Resultados
+cat("Pronóstico con Suavizamiento Exponencial (α = 0.6) para el 19 de septiembre:", pronostico_exp, "\n")
+
+```
+
+## Cual de los dos Metodos prefiere y porque?
+
+Para empezar analicemos cada metodo, por un lado  el suavizamiento exponencial es más adecuado cuando se espera que los datos tengan tendencias y patrones más complejos, ya que puede adaptarse mejor a cambios recientes. El promedio móvil de tres días suaviza los datos pero no se ajusta a cambios tan rápido como el suavizamiento exponencial, asi que por las ventajas como el adaptarse a los datos y complejidad prefiero el exponencial pero esto cambiara dependiendo del problema si fuera otro en el que no hay tendencias y cambian ciertos parametros eligiria el promedio movil pero en este caso seria el suavizamiento exponencial ya que ofrece ventajas en términos de sensibilidad a los cambios recientes, capacidad de adaptación y flexibilidad a través del parámetro α. Esto lo convierte en una elección preferible cuando se trata de pronosticar los precios de cierre de acciones en un entorno de mercado dinámico y volátil.
+

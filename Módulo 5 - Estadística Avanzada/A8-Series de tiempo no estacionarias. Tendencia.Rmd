@@ -1,0 +1,185 @@
+---
+title: "A8-Series de tiempo no estacionarias. Tendencia"
+author: "Carlos David Lozano Sanguino - A01275316"
+date: "2023-11-17"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Usa los datos de las ventas de televisores para familiarizarte con el análisis de tendencia de una serie de tiempo:
+```{r}
+# Datos de ventas
+ventas = c(4.8, 4.1, 6, 6.5, 5.8, 5.2, 6.8, 7.4, 6, 5.6, 7.5, 7.8, 6.3, 5.9, 8, 8.4)
+
+# Crear serie de tiempo
+x = ts(ventas, frequency = 4, start = c(2016, 1))
+
+# Crear un data frame con los datos
+datos_tabla <- data.frame(Año = rep(seq(2016, 2019), each = 4),
+                          Trimestre = rep(1:4, times = 4),
+                          Ventas = ventas)
+
+# Mostrar la tabla
+print(datos_tabla)
+```
+
+# Realiza el gráfico de dispersión. Observa la tendencia y los ciclos.
+```{r}
+ventas = c(4.8, 4.1, 6, 6.5, 5.8, 5.2, 6.8, 7.4, 6, 5.6, 7.5, 7.8, 6.3, 5.9, 8, 8.4)
+T=ts(ventas, frequency = 4, start(c(2016, 1)))  ##Utiliza start 2016 para indicar un año de inicio.
+D =decompose(T, type = "m")  ##"m" indica el esquema multiplicativo, "a" indica el esquema aditivo
+plot.ts(x, col = "red")
+plot(D, col ="blue")
+```
+
+# Realiza el análisis de tendencia y estacionalidad:
+# Descompón la serie en sus 3 componentes e interprétalos
+```{r}
+# Análisis de tendencia y estacionalidad
+tendencia <- D$trend
+estacionalidad <- D$seasonal
+print('Tendencia')
+print(tendencia)
+print('Estacionalidad')
+print(estacionalidad)
+```
+
+La tendencia representa la dirección general en la que se mueven los datos a lo largo del tiempo. En este caso, parece haber un aumento gradual en los valores trimestrales a lo largo de los años. Por ejemplo, en el primer trimestre del año 1, la tendencia comienza con un valor no disponible (NA), pero en el segundo trimestre ya alcanza 5.9750, y sigue aumentando en los trimestres subsiguientes. La tendencia positiva sugiere un crecimiento general en los datos a lo largo del tiempo.
+
+La estacionalidad refleja patrones recurrentes o cíclicos que se repiten en la serie temporal, generalmente asociados con ciertos períodos del año. En este caso, los valores en los cuatro trimestres (Qtr1, Qtr2, Qtr3, Qtr4) indican cómo la serie varía en cada uno de esos trimestres en relación con una línea base. Los valores proporcionados (0.9306617, 0.8363763, 1.0915441, 1.1414179) sugieren que hay fluctuaciones estacionales significativas. Por ejemplo, el primer trimestre tiene una estacionalidad más baja (0.9306617), indicando una disminución relativa en comparación con la línea base, mientras que el tercer y cuarto trimestre tienen valores superiores a 1, indicando un aumento relativo en esos trimestres.
+
+# Analiza el modelo lineal de la tendencia:
+# Realiza la regresión lineal de la tendencia (ventas desestacionalizadas vs tiempo)
+```{r}
+ventas_desestacionalizadas = (D$x)/(D$seasonal)
+x3 = 1:16
+y3 = ventas_desestacionalizadas
+N3 = lm(y3~x3)
+N3
+plot(x3, y3, type = "l")
+abline(N3, col = "red")
+text(6, 7, " ventas = 5.1080 + 0.1474 trimestre")
+```
+
+# Dibuja la recta junto con las ventas desestacionalizadas.
+# Analiza la pertinencia del modelo lineal:
+
+## Significancia de betha1
+```{r}
+summary(N3)
+```
+
+## Variabilidad explicada por el modelo (c.d)
+```{r}
+summary(N3)$r.squared
+```
+
+## Análisis de los residuos
+```{r}
+resid(N3)
+```
+
+## Prueba de normalidad
+```{r}
+shapiro.test(resid(N3))
+```
+La prueba de normalidad de Shapiro-Wilk para los residuos devuelve un p-valor de aproximadamente 0.731. Este valor es mayor que 0.05, lo que sugiere que no podemos rechazar la hipótesis nula de normalidad en los residuos. Esto es una buena señal, ya que indica que los residuos se distribuyen normalmente, cumpliendo uno de los supuestos clave para la regresión lineal.
+
+# Calcula el CME y el EPAM (promedio de los errores porcentuales) de la predicción de la serie de tiempo.
+## CME
+```{r}
+print('CME')
+mean(resid(N3)^2)
+print('EPAM')
+mean(abs(resid(N3)/ventas_desestacionalizadas)) * 100
+```
+
+El CME es aproximadamente 0.040, y el EPAM es alrededor del 2.44%. Ambos valores son relativamente bajos, lo que indica que el modelo tiene un buen ajuste y precisión en las predicciones.
+
+# Dibuja el gráfico de los valores de las ventas y las predicciones vs el tiempo
+```{r}
+predicciones = predict(N3)
+plot(x3, ventas_desestacionalizadas, type = "l", col = "blue", ylab = "Ventas Desestacionalizadas", xlab = "Tiempo")
+lines(x3, predicciones, col = "red")
+```
+# Concluye sobre el modelo: de acuerdo al análisis de verificación de los supuestos, ¿es el mejor modelo que puedes obtener?
+El modelo lineal parece ser bastante adecuado para los datos actuales, con una alta capacidad explicativa, residuos normalmente distribuidos y bajos errores de predicción. Sin embargo, siempre hay espacio para explorar modelos alternativos que podrían mejorar aún más la precisión y la interpretación.
+
+
+# Propón un posible mejor modelo para la tendencia de los datos.
+Aunque el modelo lineal ofrece un buen ajuste, sería beneficioso explorar alternativas que permitan capturar posibles no linealidades o patrones más complejos presentes en los datos. Entre las opciones a considerar se encuentran:
+
+Modelos ARIMA: Estos modelos demuestran ser eficaces en el análisis de series temporales, permitiendo la captura flexible de tendencias y ciclos estacionales.
+
+Modelos de Suavizado Exponencial: Específicamente diseñados para abordar patrones estacionales fuertes en series temporales, estos modelos pueden ser herramientas valiosas en nuestro análisis.
+
+Modelos de Regresión no Lineal: En situaciones donde exista evidencia o teoría que sugiera una relación no lineal entre el tiempo y las ventas, explorar modelos no lineales podría ser apropiado y revelador.
+
+Para cada uno de estos enfoques, es esencial llevar a cabo un diagnóstico exhaustivo. Este diagnóstico debe incluir la evaluación de la capacidad explicativa del modelo, la normalidad de los residuos y la precisión de las predicciones. Este análisis profundo nos permitirá determinar la idoneidad de cada modelo en relación con nuestro conjunto de datos específico.
+
+# Realiza el pronóstico para el siguiente año.
+
+```{r}
+f = function(x) {5.1080 + 0.1474*x}
+# Los ídices estacionales son:
+a1 = D$seasonal[1]
+a2 =D$seasonal[2]
+a3 = D$seasonal[3]
+a4 = D$seasonal[4];
+f(17)*a1*1000
+f(18)*a2*1000
+f(19)*a3*1000
+f(20)*a4*1000
+
+```
+
+# Realiza el problema de "Un problemilla más" sobre las ventas trimestraless de libros de texto universitarios.
+
+```{r}
+# Datos de ventas trimestrales
+ventas <- data.frame(
+  trimestre = c(1, 2, 3, 4),
+  ano1 = c(1690, 940, 2625, 2500),
+  ano2 = c(1800, 900, 2900, 2360),
+  ano3 = c(1850, 1100, 2930, 2615)
+)
+```
+
+# a) Encuentre los promedios móviles de cuatro trimestres y los promedios móviles centrados
+```{r}
+# a) Promedios móviles de cuatro trimestres y promedios móviles centrados
+ventas$promedio_movil4 <- rowMeans(ventas[, c("ano1", "ano2", "ano3")])
+ventas$promedio_movil_centrado <- c(NA, head(ventas$promedio_movil4, -1) + tail(ventas$promedio_movil4, -1))/2
+
+cat("a) Promedios móviles de cuatro trimestres y promedios móviles centrados:\n")
+print(ventas[, c("trimestre", "promedio_movil4", "promedio_movil_centrado")])
+```
+
+Las cifras proporcionadas muestran cómo varían los promedios móviles a lo largo de los trimestres. El promedio móvil centrado proporciona una idea más suavizada de la tendencia.
+
+
+
+# b) Calcule los índices estacionales de los cuatro trimestres
+```{r}
+# b) Índices estacionales de los cuatro trimestres
+promedio_anual <- colMeans(ventas[, c("ano1", "ano2", "ano3")])
+indices_estacionales <- t(t(ventas[, c("ano1", "ano2", "ano3")]) / promedio_anual) * 100
+
+cat("\nb) Índices estacionales de los cuatro trimestres:\n")
+print(indices_estacionales)
+```
+
+Los índices estacionales expresan el rendimiento de cada trimestre en relación con el promedio anual. Los valores más altos indican un rendimiento por encima del promedio anual, y viceversa. 
+
+# c) ¿Cuándo obtiene la editorial el mayor índice estacional? ¿Parece razonable este resultado? ¿Por qué?
+```{r}
+# c) Mayor índice estacional y su razonabilidad
+trimestre_max_indice <- which.max(apply(indices_estacionales, 2, max))
+mensaje <- paste("El mayor índice estacional se encuentra en el trimestre", trimestre_max_indice)
+
+cat("\nc) Mayor índice estacional y su razonabilidad:\n")
+cat(mensaje, "\n")
+```
